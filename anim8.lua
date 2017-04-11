@@ -186,6 +186,8 @@ local function newAnimation(image, frames, durations, onLoop)
       onLoop         = onLoop,
       timer          = 0,
       position       = 1,
+      last_position  = 1,
+      onEnd          = false,
       status         = "playing",
       flippedH       = false,
       flippedV       = false
@@ -240,16 +242,28 @@ function Animation:update(dt)
   local loops = math.floor(self.timer / self.totalDuration)
   if loops ~= 0 then
     self.timer = self.timer - self.totalDuration * loops
-    local f = type(self.onLoop) == 'function' and self.onLoop or self[self.onLoop]
-    f(self, loops)
+    if self.onEnd then
+        self.onEnd = false
+        local f = type(self.onLoop) == 'function' and self.onLoop or self[self.onLoop]
+        f(self, loops)
+    end
   end
 
   self.position = seekFrameIndex(self.intervals, self.timer)
 
-  local cbk = self.frameCallbacks[self.position]
-  if cbk and type(cbk) == 'function' or self[cbk] then
-      cbk(self)
+  if self.position ~= self.last_position then
+    local cbk = self.frameCallbacks[self.position]
+    if cbk and type(cbk) == 'function' or self[cbk] then
+        cbk(self)
+    end
+
+    if self.position == #self.frames then
+        self.onEnd = true
+    end
+
+    self.last_position = self.position
   end
+
 end
 
 function Animation:pause()
