@@ -168,7 +168,7 @@ end
 local Animationmt = { __index = Animation }
 local nop = function() end
 
-local function newAnimation(frames, durations, onLoop)
+local function newAnimation(image, frames, durations, onLoop)
   local td = type(durations);
   if (td ~= 'number' or durations <= 0) and td ~= 'table' then
     error("durations must be a positive number. Was " .. tostring(durations) )
@@ -177,6 +177,8 @@ local function newAnimation(frames, durations, onLoop)
   durations = parseDurations(durations, #frames)
   local intervals, totalDuration = parseIntervals(durations)
   return setmetatable({
+      image          = image,
+      frameCallbacks = {},
       frames         = cloneArray(frames),
       durations      = durations,
       intervals      = intervals,
@@ -223,6 +225,14 @@ local function seekFrameIndex(intervals, timer)
   return i
 end
 
+function Animation:setEndCallback(callback)
+    self.onLoop = callback
+end
+
+function Animation:setFrameCallback(frameNumber, callback)
+    self.frameCallbacks[frameNumber] = callback
+end
+
 function Animation:update(dt)
   if self.status ~= "playing" then return end
 
@@ -235,6 +245,11 @@ function Animation:update(dt)
   end
 
   self.position = seekFrameIndex(self.intervals, self.timer)
+
+  local cbk = self.frameCallbacks[self.position]
+  if cbk and type(cbk) == 'function' or self[cbk] then
+      cbk(self)
+  end
 end
 
 function Animation:pause()
@@ -262,8 +277,8 @@ function Animation:resume()
   self.status = "playing"
 end
 
-function Animation:draw(image, x, y, r, sx, sy, ox, oy, kx, ky)
-  love.graphics.draw(image, self:getFrameInfo(x, y, r, sx, sy, ox, oy, kx, ky))
+function Animation:draw(x, y, r, sx, sy, ox, oy, kx, ky)
+  love.graphics.draw(self.image, self:getFrameInfo(x, y, r, sx, sy, ox, oy, kx, ky))
 end
 
 function Animation:getFrameInfo(x, y, r, sx, sy, ox, oy, kx, ky)
