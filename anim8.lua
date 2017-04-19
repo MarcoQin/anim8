@@ -236,7 +236,8 @@ function Animation:setFrameCallback(frameNumber, callback)
 end
 
 function Animation:update(dt)
-  if self.status ~= "playing" then return end
+  local isEnd = false
+  if self.status ~= "playing" then return isEnd end
 
   self.timer = self.timer + dt
   local loops = math.floor(self.timer / self.totalDuration)
@@ -244,6 +245,7 @@ function Animation:update(dt)
     self.timer = self.timer - self.totalDuration * loops
     if self.onEnd then
         self.onEnd = false
+        isEnd = true
         local f = type(self.onLoop) == 'function' and self.onLoop or self[self.onLoop]
         f(self, loops)
     end
@@ -263,6 +265,8 @@ function Animation:update(dt)
 
     self.last_position = self.position
   end
+
+  return isEnd
 
 end
 
