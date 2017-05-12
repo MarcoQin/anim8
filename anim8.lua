@@ -178,7 +178,6 @@ local function newAnimation(image, frames, durations, onLoop)
   local intervals, totalDuration = parseIntervals(durations)
   return setmetatable({
       image          = image,
-      frameCallbacks = {},
       frames         = cloneArray(frames),
       durations      = durations,
       intervals      = intervals,
@@ -231,10 +230,6 @@ function Animation:setEndCallback(callback)
     self.onLoop = callback
 end
 
-function Animation:setFrameCallback(frameNumber, callback)
-    self.frameCallbacks[frameNumber] = callback
-end
-
 function Animation:update(dt)
   local isEnd = false
   if self.status ~= "playing" then return isEnd end
@@ -253,11 +248,7 @@ function Animation:update(dt)
 
   self.position = seekFrameIndex(self.intervals, self.timer)
 
-  if self.position ~= self.last_position then
-    local cbk = self.frameCallbacks[self.position]
-    if cbk and type(cbk) == 'function' or self[cbk] then
-        cbk(self)
-    end
+  if self.position ~= self.last_position or self.position == #self.frames then
 
     if self.position == #self.frames then
         self.onEnd = true
